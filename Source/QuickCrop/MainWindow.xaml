@@ -1,0 +1,175 @@
+﻿<Window x:Name="Window" x:Class="QuickCrop.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:QuickCrop"
+        xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
+        xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="602" Width="640" Drop="Window_Drop" AllowDrop="True" MouseMove="Window_MouseMove">
+
+    <Window.Resources>
+        <Style x:Key="SliderRepeatButton" TargetType="RepeatButton">
+            <Setter Property="SnapsToDevicePixels" Value="true" />
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Setter Property="IsTabStop" Value="false" />
+            <Setter Property="Focusable" Value="false" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border  BorderThickness="1" BorderBrush="#FF555555" Background="#FF555555" Height="1"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SliderRepeatButton1" TargetType="RepeatButton">
+            <Setter Property="SnapsToDevicePixels" Value="true" />
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border SnapsToDevicePixels="True" Background="#5396B9"  BorderThickness="1" BorderBrush="#5396B9" Height="2"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!--<Style x:Key="SliderThumb" TargetType="Thumb">
+            <Setter Property="SnapsToDevicePixels" Value="true" />
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Ellipse Height="10" Width="10" Fill="#5396B9"></Ellipse>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>-->
+
+        <Style x:Key="SliderThumb" TargetType="Thumb">
+            <Setter Property="SnapsToDevicePixels" Value="true" />
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <!--Add name to ellipse to use in  controltemplate triggers-->
+                        <Ellipse x:Name="Ellipse" Height="13" Width="13" Fill="#5396B9"></Ellipse>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="Ellipse" Property="Fill" Value="#5396B9" />
+                                <Setter TargetName="Ellipse" Property="Width" Value="14.5" />
+                                <Setter TargetName="Ellipse" Property="Height" Value="14.5" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <ControlTemplate x:Key="Slider" TargetType="Slider">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" MinHeight="{TemplateBinding MinHeight}" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Track Grid.Row="0">
+
+                </Track>
+                <Track Grid.Row="1" x:Name="PART_Track">
+                    <Track.DecreaseRepeatButton>
+                        <RepeatButton Style="{StaticResource SliderRepeatButton1}"  Command="Slider.DecreaseLarge" />
+                    </Track.DecreaseRepeatButton>
+                    <Track.Thumb>
+                        <Thumb Style="{StaticResource SliderThumb}"  />
+                    </Track.Thumb>
+                    <Track.IncreaseRepeatButton>
+                        <RepeatButton Style="{StaticResource SliderRepeatButton}" Command="Slider.IncreaseLarge" />
+                    </Track.IncreaseRepeatButton>
+                </Track>
+            </Grid>
+        </ControlTemplate>
+
+        <Style x:Key="Horizontal_Slider" TargetType="Slider">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="SnapsToDevicePixels" Value="true" />
+            <Setter Property="OverridesDefaultStyle" Value="true" />
+            <Style.Triggers>
+                <Trigger Property="Orientation" Value="Horizontal">
+                    <Setter Property="MinHeight" Value="21" />
+                    <Setter Property="MinWidth" Value="104" />
+                    <Setter Property="Template" Value="{StaticResource Slider}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="mainGrid" Background="#FF232323" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="topHalf" Height="*"/>
+            <RowDefinition x:Name="bottomHalf" Height="110" MinHeight="110" MaxHeight="110"/>
+        </Grid.RowDefinitions>
+
+        <ffme:MediaElement x:Name="ffmpegPlayer" Background="Black" LoadedBehavior="Play" UnloadedBehavior="Manual" MediaOpened="FfmpegPlayer_MediaOpened" LoopingBehavior="Play" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0"/>
+
+        <Path x:Name="darkenPath" Fill="#DB000000" Stretch="Fill" Grid.Row="0" >
+            <Path.Data>
+                <CombinedGeometry GeometryCombineMode="Exclude">
+                    <CombinedGeometry.Geometry1>
+                        <RectangleGeometry x:Name="rectangleDarken" Rect="0,0,640,480" />
+                    </CombinedGeometry.Geometry1>
+                    <CombinedGeometry.Geometry2>
+                        <RectangleGeometry x:Name="rectangleGeometryExclude" Rect="100,100,100,100" />
+                    </CombinedGeometry.Geometry2>
+                </CombinedGeometry>
+            </Path.Data>
+        </Path>
+
+        <Canvas x:Name="canvas1" Background="Transparent" MouseDown="canvas1_MouseDown" MouseMove="canvas1_MouseMove" MouseUp="canvas1_MouseUp" ScrollViewer.VerticalScrollBarVisibility="Disabled" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
+            <Rectangle x:Name="dragRectangle" Stroke="#5396B9" Canvas.Left="100" Canvas.Top="100" Width="100" Height="100"/>
+
+            <Line x:Name="verticalLineLeft" X1="133" Y1="100" X2="133" Y2="200" Stroke="#7FFFFFFF" StrokeDashArray="3, 2" StrokeThickness="1" />
+            <Line x:Name="verticalLineRight" X1="166" Y1="100" X2="166" Y2="200" Stroke="#7FFFFFFF" StrokeDashArray="3, 2" StrokeThickness="1" />
+
+            <Line x:Name="horizontalLineTop" X1="100" Y1="133" X2="200" Y2="133" Stroke="#7FFFFFFF" StrokeDashArray="3, 2" StrokeThickness="1" />
+            <Line x:Name="horizontalLineBottom" X1="100" Y1="166" X2="200" Y2="166" Stroke="#7FFFFFFF" StrokeDashArray="3, 2" StrokeThickness="1" />
+
+            <Rectangle x:Name="topLeftSquare" Fill="#5396B9" Canvas.Left="98" Canvas.Top="98" Width="5" Height="5"/>
+            <Rectangle x:Name="topCenterSquare" Fill="#5396B9" Canvas.Left="147" Canvas.Top="98" Width="5" Height="5"/>
+            <Rectangle x:Name="topRightSquare" Fill="#5396B9" Canvas.Left="197" Canvas.Top="98" Width="5" Height="5"/>
+
+            <Rectangle x:Name="middleLeftSquare" Fill="#5396B9" Canvas.Left="98" Canvas.Top="147" Width="5" Height="5"/>
+            <Rectangle x:Name="middleRightSquare" Fill="#5396B9" Canvas.Left="197" Canvas.Top="147" Width="5" Height="5"/>
+
+            <Rectangle x:Name="bottomLeftSquare" Fill="#5396B9" Canvas.Left="98" Canvas.Top="197" Width="5" Height="5"/>
+            <Rectangle x:Name="bottomCenterSquare" Fill="#5396B9" Canvas.Left="147" Canvas.Top="197" Width="5" Height="5"/>
+            <Rectangle x:Name="bottomRightSquare" Fill="#5396B9" Canvas.Left="197" Canvas.Top="197" Width="5" Height="5"/>
+        </Canvas>
+
+        <Button x:Name="playPauseButton" Content="⏸" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="24" Width="23" Click="PlayPauseButton_Click" IsEnabled="False" ToolTip="Pause/Pause Video" Grid.Row="1"/>
+
+        <Grid x:Name="slidersGrid" Margin="38,13,10,0" VerticalAlignment="Top" Height="21" Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="13*"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="8*" MinWidth="0"/>
+                <ColumnDefinition MinWidth="0" Width="2*"/>
+            </Grid.ColumnDefinitions>
+            <Slider x:Name="videoPositionSlider" Style="{StaticResource Horizontal_Slider}" Minimum="0" Maximum="100" ValueChanged="VideoPositionSlider_ValueChanged" PreviewMouseDown="VideoPositionSlider_MouseDown" PreviewMouseUp="VideoPositionSlider_MouseUp" IsEnabled="False" Margin="3,0,6,0" ToolTip="Video Position" Value="0" Foreground="{x:Null}" VerticalAlignment="Stretch"/>
+            <Slider x:Name="videoVolumeSlider" Style="{StaticResource Horizontal_Slider}" Maximum="1" ValueChanged="VideoVolumeSlider_ValueChanged" IsEnabled="False" Grid.Column="1" ToolTip="Video Volume" Margin="0,0,1,0" />
+        </Grid>
+        <Grid x:Name="buttonsGrid" Height="23" Margin="10,71,10,0" VerticalAlignment="Top" Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="5*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="openFileButton" Content="Open File" Click="OpenFileButton_Click" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RenderTransformOrigin="0.5,0.5" Margin="0,0,2,0" ToolTip="Open A File"/>
+            <Button x:Name="saveButton" Content="Save As Cropped" HorizontalAlignment="Stretch" Margin="2,0,0,0" VerticalAlignment="Stretch" Grid.Column="1" Click="SaveButton_Click" ToolTip="Save a new cropped copy of the video."/>
+        </Grid>
+        <Label x:Name="infoLabel" Content="Click 'Open File' to crop a video." HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Foreground="White" Grid.Row="1"/>
+        <CheckBox x:Name="guidelinesCheckBox" Content="Guidelines" HorizontalAlignment="Right" Margin="0,44,10,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" Checked="CheckBox_Checked" Unchecked="guidelinesCheckBox_Unchecked" IsChecked="True" FlowDirection="LeftToRight"/>
+    </Grid>
+</Window>
