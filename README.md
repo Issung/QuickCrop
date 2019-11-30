@@ -1,6 +1,6 @@
 # QuickCrop
 Dead simple, light weight program to crop your videos.
-___
+
 ![QuickCrop's main window](http://puu.sh/EK6qU.png)
 
 # Features
