@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using Path = System.IO.Path;
 
 namespace QuickCrop
 {
@@ -39,18 +40,20 @@ namespace QuickCrop
 
         int x = 100, y = 100, width = 100, height = 100;
 
+        bool showGuidelines = true;
+
         string ffmpegDir;
 
-        bool showGuidelines = true;
+        bool muted = false;
+        double unmutedVolume = 0.5d;
+        const string PLAY_ICON = "▶",
+            PAUSE_ICON = "⏸",
+            MUTE_ICON = "🔇",
+            UNMUTE_ICON = "🔊";
 
         public MainWindow()
         {
             InitializeComponent();
-
-            ffmpegDir = Directory.GetCurrentDirectory() + "\\ffmpeg";
-            Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
-            Console.WriteLine("FFMPEG Directory: " + ffmpegDir);
-            Console.WriteLine($"Does file {ffmpegDir}\\ffmpeg.exe exist?: {File.Exists(ffmpegDir + "\\ffmpeg.exe")}");
 
             ffmpegPlayer.Volume = 0;
 
@@ -58,6 +61,31 @@ namespace QuickCrop
             videoPositionUpdateTimer.Interval = TimeSpan.FromSeconds(0.1);
             videoPositionUpdateTimer.Tick += VideoPositionUpdate;
             videoPositionUpdateTimer.Start();
+
+            if (Directory.Exists(Directory.GetCurrentDirectory() + "\\ffmpeg"))
+            {
+                Console.WriteLine("FFmpeg directory found in application folder.");
+
+                mainGrid.Children.Remove(ffmpegAlertGrid);
+                ffmpegDir = Directory.GetCurrentDirectory() + "\\ffmpeg";
+                Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
+            }
+            else
+            { 
+                string path = Properties.Settings.Default.ffmpegPath;
+
+                if (!String.IsNullOrWhiteSpace(path) && Directory.Exists(path))
+                {
+                    var files = Directory.GetFiles(Properties.Settings.Default.ffmpegPath).Select(t => Path.GetFileName(t));
+
+                    if (files.Contains("ffmpeg.exe"))
+                    {
+                        mainGrid.Children.Remove(ffmpegAlertGrid);
+                        ffmpegDir = path;
+                        Unosquare.FFME.Library.FFmpegDirectory = path;
+                    }
+                }
+            }
         }
 
         private void VideoPositionUpdate(object sender, EventArgs e)
@@ -91,19 +119,27 @@ namespace QuickCrop
             if (point.X - left < GAP)
             {
                 // Left edge.
-                if (point.Y - top < GAP) return HitType.TopLeft;
-                if (bottom - point.Y < GAP) return HitType.BottomLeft;
+                if (point.Y - top < GAP) 
+                    return HitType.TopLeft;
+                if (bottom - point.Y < GAP) 
+                    return HitType.BottomLeft;
                 return HitType.Left;
             }
             if (right - point.X < GAP)
             {
                 // Right edge.
-                if (point.Y - top < GAP) return HitType.TopRight;
-                if (bottom - point.Y < GAP) return HitType.BottomRight;
+                if (point.Y - top < GAP) 
+                    return HitType.TopRight;
+                if (bottom - point.Y < GAP) 
+                    return HitType.BottomRight;
                 return HitType.Right;
             }
-            if (point.Y - top < GAP) return HitType.Top;
-            if (bottom - point.Y < GAP) return HitType.Bottom;
+
+            if (point.Y - top < GAP) 
+                return HitType.Top;
+            if (bottom - point.Y < GAP) 
+                return HitType.Bottom;
+
             return HitType.Body;
         }
 
@@ -112,34 +148,39 @@ namespace QuickCrop
         {
             // See what cursor we should display.
             Cursor desired_cursor = Cursors.Arrow;
-            switch (MouseHitType)
-            {
-                case HitType.None:
-                    desired_cursor = Cursors.Arrow;
-                    break;
-                case HitType.Body:
-                    desired_cursor = Cursors.ScrollAll;
-                    break;
-                case HitType.TopLeft:
-                case HitType.BottomRight:
-                    desired_cursor = Cursors.SizeNWSE;
-                    break;
-                case HitType.BottomLeft:
-                case HitType.TopRight:
-                    desired_cursor = Cursors.SizeNESW;
-                    break;
-                case HitType.Top:
-                case HitType.Bottom:
-                    desired_cursor = Cursors.SizeNS;
-                    break;
-                case HitType.Left:
-                case HitType.Right:
-                    desired_cursor = Cursors.SizeWE;
-                    break;
+
+            if (ffmpegAlertGrid.Visibility != Visibility.Visible)
+            { 
+                switch (MouseHitType)
+                {
+                    case HitType.None:
+                        desired_cursor = Cursors.Arrow;
+                        break;
+                    case HitType.Body:
+                        desired_cursor = Cursors.ScrollAll;
+                        break;
+                    case HitType.TopLeft:
+                    case HitType.BottomRight:
+                        desired_cursor = Cursors.SizeNWSE;
+                        break;
+                    case HitType.BottomLeft:
+                    case HitType.TopRight:
+                        desired_cursor = Cursors.SizeNESW;
+                        break;
+                    case HitType.Top:
+                    case HitType.Bottom:
+                        desired_cursor = Cursors.SizeNS;
+                        break;
+                    case HitType.Left:
+                    case HitType.Right:
+                        desired_cursor = Cursors.SizeWE;
+                        break;
+                }
             }
 
             // Display the desired cursor.
-            if (Cursor != desired_cursor) Cursor = desired_cursor;
+            if (Cursor != desired_cursor) 
+                Cursor = desired_cursor;
         }
 
         // Start dragging.
@@ -166,6 +207,8 @@ namespace QuickCrop
         // Otherwise display the correct cursor.
         private void canvas1_MouseMove(object sender, MouseEventArgs e)
         {
+            Console.WriteLine("canvas1_MouseMove");
+
             if (!DragInProgress)
             {
                 MouseHitType = SetHitType(dragRectangle, Mouse.GetPosition(canvas1));
@@ -393,10 +436,11 @@ namespace QuickCrop
             videoPositionSlider.IsEnabled = true;
             videoVolumeSlider.IsEnabled = true;
             playPauseButton.IsEnabled = true;
+            muteUnmuteButton.IsEnabled = true;
 
             videoPositionSlider.Maximum = ffmpegPlayer.NaturalDuration.Value.TotalSeconds;
             videoPositionSlider.Value = 0;
-            playPauseButton.Content = "⏸";
+            playPauseButton.Content = PAUSE_ICON;
             paused = false;
 
             UpdateInfoLabel();
@@ -448,12 +492,12 @@ namespace QuickCrop
             if (paused)
             {
                 ffmpegPlayer.Pause();
-                playPauseButton.Content = "▶";
+                playPauseButton.Content = PLAY_ICON;
             }
             else
             {
                 ffmpegPlayer.Play();
-                playPauseButton.Content = "⏸";
+                playPauseButton.Content = PAUSE_ICON;
             }
         }
 
@@ -535,6 +579,69 @@ namespace QuickCrop
             verticalLineRight.Visibility = Visibility.Hidden;
             horizontalLineTop.Visibility = Visibility.Hidden;
             horizontalLineBottom.Visibility = Visibility.Hidden;
+        }
+
+        private void locateFFmpegButton_Click(object sender, RoutedEventArgs e)
+        {
+            string path = Utilities.OpenFolder();
+
+            if (string.IsNullOrWhiteSpace(path))
+                return;
+
+            var files = Directory.GetFiles(path).Select(t => Path.GetFileName(t));
+
+            if (files.Contains("ffmpeg.exe"))
+            {
+                mainGrid.Children.Remove(ffmpegAlertGrid);
+                Unosquare.FFME.Library.FFmpegDirectory = Properties.Settings.Default.ffmpegPath;
+                ffmpegPlayer.BeginInit();
+
+                Properties.Settings.Default.ffmpegPath = path;
+                Properties.Settings.Default.Save();
+
+                // 'Reload' the window so that FFmpeg gets loaded properly.
+                Application.Current.ShutdownMode = ShutdownMode.OnLastWindowClose;
+                new MainWindow().Show();
+                Close();
+            }
+            else
+            {
+                MessageBox.Show(
+                    "'ffmpeg.exe' cannot be found in the provided folder. Please try again.", 
+                    "'ffmpeg.exe' not found!", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            Properties.Settings.Default.Save();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            SetCropArea(ffmpegPlayer.ActualWidth / 4,
+               ffmpegPlayer.ActualHeight / 4,
+               ffmpegPlayer.ActualWidth / 2,
+               ffmpegPlayer.ActualHeight / 2);
+        }
+
+        private void MuteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (muted)
+            {
+                muted = false;
+                muteUnmuteButton.Content = UNMUTE_ICON;
+                ffmpegPlayer.Volume = unmutedVolume;
+            }
+            else
+            {
+                muted = true;
+                muteUnmuteButton.Content = MUTE_ICON;
+                unmutedVolume = Math.Clamp(ffmpegPlayer.Volume, 0.1d, 1);
+                ffmpegPlayer.Volume = 0;
+            }
+
+            videoVolumeSlider.Value = ffmpegPlayer.Volume;
         }
 
         private void FrameCountFinish(object sender, EventArgs e)

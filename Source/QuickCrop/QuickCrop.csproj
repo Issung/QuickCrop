@@ -1,25 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
     <StartupObject />
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+
   <ItemGroup>
-    <None Remove="ffmpeg\avcodec-58.dll" />
-    <None Remove="ffmpeg\avdevice-58.dll" />
-    <None Remove="ffmpeg\avfilter-7.dll" />
-    <None Remove="ffmpeg\avformat-58.dll" />
-    <None Remove="ffmpeg\avutil-56.dll" />
-    <None Remove="ffmpeg\ffmpeg.exe" />
-    <None Remove="ffmpeg\ffplay.exe" />
-    <None Remove="ffmpeg\ffprobe.exe" />
-    <None Remove="ffmpeg\postproc-55.dll" />
-    <None Remove="ffmpeg\swresample-3.dll" />
-    <None Remove="ffmpeg\swscale-5.dll" />
     <None Remove="UserRectangle.xaml" />
   </ItemGroup>
 
@@ -31,39 +24,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="ffmpeg\avcodec-58.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\avdevice-58.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\avfilter-7.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\avformat-58.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\avutil-56.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\ffmpeg.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\ffplay.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\ffprobe.exe">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\postproc-55.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\swresample-3.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ffmpeg\swscale-5.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </EmbeddedResource>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
 </Project>

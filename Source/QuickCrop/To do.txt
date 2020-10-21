@@ -1,3 +1,19 @@
-Align UI.
-Make FFMPEG faster (WEBM Restriction).
-Export (Crop) options?
+Todo:
+	Overwrite loaded video.
+	Align UI Properly with Grids & Such.
+	Autocrop feature
+		Press auto crop button.
+		Program takes a snapshot of the video's current frame or first frame.
+		Reaches in from the top, bottom, left and right detecting black area.
+		Automatically sets the crop area for the user.
+
+Maybe:
+	Trim video length?
+	Mute exported video?
+	Style buttons to suite rest of application.
+	Small welcome window.
+	Help and tips window.
+
+Done:
+	FFMPEG Locate.
+	Remember FFMPEG location.

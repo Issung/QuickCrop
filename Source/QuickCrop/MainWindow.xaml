@@ -7,7 +7,7 @@
         xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         mc:Ignorable="d"
-        Title="MainWindow" Height="602" Width="640" Drop="Window_Drop" AllowDrop="True" MouseMove="Window_MouseMove">
+        Title="MainWindow" Height="602" Width="640" Drop="Window_Drop" AllowDrop="True" MouseMove="Window_MouseMove" Closing="Window_Closing" Loaded="Window_Loaded" >
 
     <Window.Resources>
         <Style x:Key="SliderRepeatButton" TargetType="RepeatButton">
@@ -148,18 +148,20 @@
             <Rectangle x:Name="bottomRightSquare" Fill="#5396B9" Canvas.Left="197" Canvas.Top="197" Width="5" Height="5"/>
         </Canvas>
 
-        <Button x:Name="playPauseButton" Content="⏸" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="24" Width="23" Click="PlayPauseButton_Click" IsEnabled="False" ToolTip="Pause/Pause Video" Grid.Row="1"/>
-
-        <Grid x:Name="slidersGrid" Margin="38,13,10,0" VerticalAlignment="Top" Height="21" Grid.Row="1">
+        <Grid x:Name="slidersGrid" Margin="10,13,10,0" VerticalAlignment="Top" Height="21" Grid.Row="1">
             <Grid.RowDefinitions>
-                <RowDefinition Height="13*"/>
+                <RowDefinition Height="14*"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="23px" MinWidth="0"/>
                 <ColumnDefinition Width="8*" MinWidth="0"/>
+                <ColumnDefinition Width="23px" MinWidth="0"/>
                 <ColumnDefinition MinWidth="0" Width="2*"/>
             </Grid.ColumnDefinitions>
-            <Slider x:Name="videoPositionSlider" Style="{StaticResource Horizontal_Slider}" Minimum="0" Maximum="100" ValueChanged="VideoPositionSlider_ValueChanged" PreviewMouseDown="VideoPositionSlider_MouseDown" PreviewMouseUp="VideoPositionSlider_MouseUp" IsEnabled="False" Margin="3,0,6,0" ToolTip="Video Position" Value="0" Foreground="{x:Null}" VerticalAlignment="Stretch"/>
-            <Slider x:Name="videoVolumeSlider" Style="{StaticResource Horizontal_Slider}" Maximum="1" ValueChanged="VideoVolumeSlider_ValueChanged" IsEnabled="False" Grid.Column="1" ToolTip="Video Volume" Margin="0,0,1,0" />
+            <Button x:Name="playPauseButton" Content="⏸" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="PlayPauseButton_Click" IsEnabled="False" ToolTip="Pause/Pause Video"/>
+            <Slider x:Name="videoPositionSlider" Style="{StaticResource Horizontal_Slider}" Minimum="0" Maximum="100" ValueChanged="VideoPositionSlider_ValueChanged" PreviewMouseDown="VideoPositionSlider_MouseDown" PreviewMouseUp="VideoPositionSlider_MouseUp" IsEnabled="False" Margin="3,0,6,0" ToolTip="Video Position" Value="0" Foreground="{x:Null}" VerticalAlignment="Stretch" Grid.Column="1"/>
+            <Button x:Name="muteUnmuteButton" Content="🔊" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="MuteButton_Click" IsEnabled="False" ToolTip="Mute/Unmute Video" Grid.Column="2" />
+            <Slider x:Name="videoVolumeSlider" Style="{StaticResource Horizontal_Slider}" Maximum="1" ValueChanged="VideoVolumeSlider_ValueChanged" IsEnabled="False" ToolTip="Video Volume" Grid.Column="3" Margin="5,0,0,0" />
         </Grid>
         <Grid x:Name="buttonsGrid" Height="23" Margin="10,71,10,0" VerticalAlignment="Top" Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -171,5 +173,14 @@
         </Grid>
         <Label x:Name="infoLabel" Content="Click 'Open File' to crop a video." HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Foreground="White" Grid.Row="1"/>
         <CheckBox x:Name="guidelinesCheckBox" Content="Guidelines" HorizontalAlignment="Right" Margin="0,44,10,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" Checked="CheckBox_Checked" Unchecked="guidelinesCheckBox_Unchecked" IsChecked="True" FlowDirection="LeftToRight"/>
+        <Grid x:Name="ffmpegAlertGrid" Grid.Row="0" Background="#FF171717">
+            <TextBlock x:Name="ffmpegInfoTextBlock" Margin="10,10,10,237" TextWrapping="Wrap" Foreground="White" Width="620">
+                This program uses the multimedia framework FFmpeg to handle video playback, cropping and conversion. 
+                In order to use this program you must have FFmpeg on your machine and inform this program of it's location. You can obtain FFmpeg built for windows machines here:
+                <Hyperlink NavigateUri="https://ffmpeg.zeranoe.com/builds/" Foreground="#FF0080FF">https://ffmpeg.zeranoe.com/builds/</Hyperlink>
+                Once you have downloaded it you may place it somewhere you will remember, or if you only want to use it for this program you may place it in this program's directory in a folder called 'ffmpeg'.
+            </TextBlock>
+            <Button x:Name="locateFFmpegButton" Margin="0,223,0,0" Height="23" Content="Locate FFmpeg Folder" Click="locateFFmpegButton_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Width="142" />
+        </Grid>
     </Grid>
 </Window>

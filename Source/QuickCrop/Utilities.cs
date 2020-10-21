@@ -27,6 +27,21 @@ namespace QuickCrop
                 return FileType.Other;
         }
 
+        public static string OpenFolder()
+        {
+            using (var dialog = new CommonOpenFileDialog())
+            {
+                dialog.IsFolderPicker = true;
+
+                if (dialog.ShowDialog() == CommonFileDialogResult.Ok && !string.IsNullOrWhiteSpace(dialog.FileName))
+                {
+                    return dialog.FileName;
+                }
+            }
+
+            return null;
+        }
+
         public static string OpenFile()
         {
             using (var dialog = new CommonOpenFileDialog())
