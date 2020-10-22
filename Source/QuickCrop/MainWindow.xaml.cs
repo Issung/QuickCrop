@@ -1,4 +1,6 @@
-﻿using System;
+﻿using FFmpeg.AutoGen;
+using Microsoft.WindowsAPICodePack.Shell.PropertySystem;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -421,17 +423,18 @@ namespace QuickCrop
         {
             Console.WriteLine("Media Opened!");
 
-            //TODO: Find a work around for this garbage.
-            const int ADD_WIDTH = 16, 
-                ADD_HEIGHT = 23 + 32 - (8 * 2);
+            // The width of the border of the window, usually just 1 pixel on either side, *2 for both sides.
+            int windowBorderWidth = System.Windows.Forms.SystemInformation.BorderSize.Width * 2;
 
-            //TODO: Can actually grab the controls height instead of updating a constant.
-            const int CONTROLS_HEIGHT = 170;//94;
-            Console.WriteLine($"CONTROLS_HEIGHT: {CONTROLS_HEIGHT} mainGrid.RowDefinitions[1].ActualHeight: {mainGrid.RowDefinitions[1].ActualHeight}");
+            // The height of the border of the window, this takes into account the window caption, and then border padding size ontop of that.
+            int windowBorderHeight = System.Windows.Forms.SystemInformation.CaptionHeight + (System.Windows.Forms.SystemInformation.FrameBorderSize.Height * 2);
 
-            Width = ffmpegPlayer.NaturalVideoWidth + ADD_WIDTH;
+            double videoAreaHeight = ffmpegPlayer.NaturalVideoHeight;
+            double controlsHeight = mainGrid.RowDefinitions[1].ActualHeight;
 
-            Height = ffmpegPlayer.NaturalVideoHeight + ADD_HEIGHT + CONTROLS_HEIGHT;
+            Width = ffmpegPlayer.NaturalVideoWidth + windowBorderWidth;
+
+            Height = videoAreaHeight + controlsHeight + windowBorderHeight;
 
             /// Crop to this:
             ///  _________________
