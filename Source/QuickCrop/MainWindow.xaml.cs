@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,14 +19,19 @@ namespace QuickCrop
         // The part of the rectangle the mouse is over.
         private enum HitType
         {
-            None, Body, TopLeft, TopRight, BottomLeft, BottomRight, Left, Right, Top, Bottom
+            None, Body, TopLeft, TopRight, BottomLeft, BottomRight, Left, Right, Top, Bottom, ScrollWE
         };
 
         // The part of the rectangle under the mouse.
         HitType MouseHitType = HitType.None;
 
         // True if a drag is in progress.
-        private bool DragInProgress = false;
+        private bool CropDragInProgress = false;
+
+        private bool TrimDragInProgress = false;
+
+        //Remembers whether the video was playing when scrubbing starts (slider on mouse down preview).
+        bool ffmpegWasPlayingOnScrubStart = false;
 
         // The drag's last point.
         private Point LastPoint;
@@ -44,8 +48,9 @@ namespace QuickCrop
 
         string ffmpegDir;
 
-        bool muted = false;
+        bool muted = true;
         double unmutedVolume = 0.5d;
+        private const double MIN_UNMUTED_VOLUME = 0.1d;
         const string PLAY_ICON = "▶",
             PAUSE_ICON = "⏸",
             MUTE_ICON = "🔇",
@@ -67,6 +72,7 @@ namespace QuickCrop
                 Console.WriteLine("FFmpeg directory found in application folder.");
 
                 mainGrid.Children.Remove(ffmpegAlertGrid);
+                ffmpegAlertGrid.Visibility = Visibility.Hidden;
                 ffmpegDir = Directory.GetCurrentDirectory() + "\\ffmpeg";
                 Unosquare.FFME.Library.FFmpegDirectory = ffmpegDir;
             }
@@ -81,6 +87,7 @@ namespace QuickCrop
                     if (files.Contains("ffmpeg.exe"))
                     {
                         mainGrid.Children.Remove(ffmpegAlertGrid);
+                        ffmpegAlertGrid.Visibility = Visibility.Hidden;
                         ffmpegDir = path;
                         Unosquare.FFME.Library.FFmpegDirectory = path;
                     }
@@ -101,21 +108,23 @@ namespace QuickCrop
         // Return a HitType value to indicate what is at the point.
         private HitType SetHitType(Rectangle rect, Point point)
         {
-            double left = Canvas.GetLeft(dragRectangle);
-            double top = Canvas.GetTop(dragRectangle);
-            double right = left + dragRectangle.Width;
-            double bottom = top + dragRectangle.Height;
+            double left = Canvas.GetLeft(rect);
+            double top = Canvas.GetTop(rect);
+            double right = left + rect.Width;
+            double bottom = top + rect.Height;
 
-            if (point.X < left)
-                return HitType.None;
-            if (point.X > right)
-                return HitType.None;
-            if (point.Y < top)
-                return HitType.None;
-            if (point.Y > bottom)
-                return HitType.None;
-
+            //A small constant allowing for give/take of grabbing handles from 10 less/more pixels away.
             const double GAP = 10;
+
+            if (point.X < left - GAP)
+                return HitType.None;
+            if (point.X > right + GAP)
+                return HitType.None;
+            if (point.Y < top - GAP)
+                return HitType.None;
+            if (point.Y > bottom + GAP)
+                return HitType.None;
+
             if (point.X - left < GAP)
             {
                 // Left edge.
@@ -139,7 +148,7 @@ namespace QuickCrop
                 return HitType.Top;
             if (bottom - point.Y < GAP) 
                 return HitType.Bottom;
-
+            
             return HitType.Body;
         }
 
@@ -159,6 +168,9 @@ namespace QuickCrop
                     case HitType.Body:
                         desired_cursor = Cursors.ScrollAll;
                         break;
+                    case HitType.ScrollWE:
+                        desired_cursor = Cursors.ScrollWE;
+                        break;
                     case HitType.TopLeft:
                     case HitType.BottomRight:
                         desired_cursor = Cursors.SizeNWSE;
@@ -177,7 +189,7 @@ namespace QuickCrop
                         break;
                 }
             }
-
+            
             // Display the desired cursor.
             if (Cursor != desired_cursor) 
                 Cursor = desired_cursor;
@@ -199,7 +211,7 @@ namespace QuickCrop
             else
             { 
                 LastPoint = Mouse.GetPosition(canvas1);
-                DragInProgress = true;
+                CropDragInProgress = true;
             }
         }
 
@@ -209,7 +221,7 @@ namespace QuickCrop
         {
             Console.WriteLine("canvas1_MouseMove");
 
-            if (!DragInProgress)
+            if (!CropDragInProgress)
             {
                 MouseHitType = SetHitType(dragRectangle, Mouse.GetPosition(canvas1));
                 SetMouseCursor();
@@ -381,7 +393,7 @@ namespace QuickCrop
         // Stop dragging.
         private void canvas1_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            DragInProgress = false;
+            CropDragInProgress = false;
         }
 
         private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -409,8 +421,13 @@ namespace QuickCrop
         {
             Console.WriteLine("Media Opened!");
 
-            const int ADD_WIDTH = 16, ADD_HEIGHT = 23 + 32;
-            const int CONTROLS_HEIGHT = 94;
+            //TODO: Find a work around for this garbage.
+            const int ADD_WIDTH = 16, 
+                ADD_HEIGHT = 23 + 32 - (8 * 2);
+
+            //TODO: Can actually grab the controls height instead of updating a constant.
+            const int CONTROLS_HEIGHT = 170;//94;
+            Console.WriteLine($"CONTROLS_HEIGHT: {CONTROLS_HEIGHT} mainGrid.RowDefinitions[1].ActualHeight: {mainGrid.RowDefinitions[1].ActualHeight}");
 
             Width = ffmpegPlayer.NaturalVideoWidth + ADD_WIDTH;
 
@@ -429,7 +446,7 @@ namespace QuickCrop
                 ffmpegPlayer.NaturalVideoHeight / 2);
 
 #if !DEBUG
-            // Resizing can be useful for debugging.
+            // Resizing can be useful for debugging so only turn it off in release mode.
             ResizeMode = ResizeMode.NoResize;
 #endif
 
@@ -459,9 +476,31 @@ namespace QuickCrop
             infoLabel.Content = $"Video Dimensions: {ogWidth}x{ogHeight}, Crop Dimensions: {cropWidth}x{cropHeight}.";
         }
 
+        int videoVolumeSliderValueChangedSkips = 0;
+
         private void VideoVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            ffmpegPlayer.Volume = videoVolumeSlider.Value;
+            if (videoVolumeSliderValueChangedSkips > 0)
+            {
+                videoVolumeSliderValueChangedSkips--;
+            }
+            else
+            { 
+                ffmpegPlayer.Volume = videoVolumeSlider.Value;
+
+                if (ffmpegPlayer.Volume == 0)
+                {
+                    muted = true;
+                    unmutedVolume = MIN_UNMUTED_VOLUME;
+                    muteUnmuteButton.Content = MUTE_ICON;
+                }
+                else
+                {
+                    muted = false;
+                    unmutedVolume = Math.Clamp(ffmpegPlayer.Volume, MIN_UNMUTED_VOLUME, 1);
+                    muteUnmuteButton.Content = UNMUTE_ICON;
+                }
+            }
         }
 
         private void VideoPositionSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -476,12 +515,20 @@ namespace QuickCrop
         private void VideoPositionSlider_MouseDown(object sender, MouseButtonEventArgs e)
         {
             Console.WriteLine("VideoPositionSlider_MouseDown");
+
+            ffmpegWasPlayingOnScrubStart = ffmpegPlayer.IsPlaying;
+            ffmpegPlayer.Pause();
+
             videoPositionUpdateTimer.Stop();
         }
 
         private void VideoPositionSlider_MouseUp(object sender, MouseButtonEventArgs e)
         {
             Console.WriteLine("VideoPositionSlider_MouseUp");
+
+            if (ffmpegWasPlayingOnScrubStart)
+                ffmpegPlayer.Play();
+
             videoPositionUpdateTimer.Start();
         }
 
@@ -562,7 +609,7 @@ namespace QuickCrop
 
         private void Window_MouseMove(object sender, MouseEventArgs e)
         {
-            canvas1_MouseMove(sender, e);
+            //canvas1_MouseMove(sender, e);
         }
 
         private void CheckBox_Checked(object sender, RoutedEventArgs e)
@@ -612,6 +659,118 @@ namespace QuickCrop
             }
         }
 
+        private void trimBar_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            MouseHitType = SetHitType(trimBarRectangle, Mouse.GetPosition(trimBarCanvas));
+
+            if (MouseHitType == HitType.None)
+                return;
+
+            if (MouseHitType == HitType.Body)
+                MouseHitType = HitType.ScrollWE;
+
+            SetMouseCursor();
+
+            if (e.RightButton == MouseButtonState.Pressed || e.ClickCount == 2)
+            {
+                //TODO: Add "expand crop area" functionality for the trim functionality.
+                //ExpandCropArea(MouseHitType);
+            }
+            else
+            {
+                LastPoint = Mouse.GetPosition(trimBarCanvas);
+                TrimDragInProgress = true;
+            }
+        }
+
+        private void trimBar_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (!TrimDragInProgress)
+            {
+                Console.WriteLine($"trimBar_MouseMove !DragInProgress Mouse.GetPosition: {Mouse.GetPosition(trimBarCanvas).ToString()} MouseHitType: {MouseHitType.ToString()}");
+
+                MouseHitType = SetHitType(trimBarRectangle, Mouse.GetPosition(trimBarCanvas));
+
+                if (MouseHitType != HitType.Left && MouseHitType != HitType.Body && MouseHitType != HitType.Right)
+                    MouseHitType = HitType.None;
+
+                if (MouseHitType == HitType.Body)
+                    MouseHitType = HitType.ScrollWE;
+
+                SetMouseCursor();
+            }
+            else
+            {
+                Console.WriteLine($"trimBar_MouseMove DragInProgress Mouse.GetPosition: {Mouse.GetPosition(trimBarCanvas).ToString()} MouseHitType: {MouseHitType.ToString()}");
+
+                // See how much the mouse has moved.
+                Point point = Mouse.GetPosition(trimBarCanvas);
+                double offset_x = point.X - LastPoint.X;
+
+                // Get the rectangle's current position.
+                double new_x = Canvas.GetLeft(trimBarRectangle);
+                double new_width = trimBarRectangle.Width;
+
+                // Update the rectangle.
+                switch (MouseHitType)
+                {
+                    case HitType.ScrollWE:
+                        new_x += offset_x;
+                        break;
+                    case HitType.Left:
+                        new_x += offset_x;
+                        new_width -= offset_x;
+                        break;
+                    case HitType.Right:
+                        new_width += offset_x;
+                        break;
+                }
+
+                // Clamp square to be within video limits
+                new_width = Math.Clamp(new_width, 10, trimBarCanvas.ActualWidth);
+
+                new_x = Math.Clamp(new_x, 0, trimBarCanvas.ActualWidth - new_width);
+
+                SetTrimBarArea(new_x, new_width);
+
+                // Save the mouse's new location.
+                LastPoint = point;
+            }
+        }
+
+        private void SetTrimBarArea(double new_x, double new_width)
+        {
+            x = (int)new_x;
+            width = (int)new_width;
+
+            // Update the rectangle.
+            Canvas.SetLeft(trimBarRectangle, new_x);
+
+            trimBarRectangle.Width = new_width;
+
+            trimBarDarken.Rect = new Rect(0, 0, trimBarDarkenPath.ActualWidth, trimBarDarkenPath.ActualHeight);
+
+            /// Okay, we are adding and subtracting 1s because apparently if rectangleGeometryExclude reaches the same width 
+            /// and height of the path it's in then the paths's width and height to 0 somehow, and we can't fix it. This doesnt show any 
+            /// visual glitches because the dragRectangle's stroke covers it up, so let's just leave it...
+            trimBarExclude.Rect = new Rect(new_x + 1, 0, new_width - 2, trimBarExclude.Rect.Height);
+
+            //Moving small 'handle' squares on the edges & corners of the crop square.
+
+            double xLeft = new_x - 2;
+            double xRight = new_x + new_width - 3;
+
+            Canvas.SetLeft(trimBarLeftHandle, xLeft);
+            Canvas.SetLeft(trimBarRightHandle, xRight);
+
+            //UpdateInfoLabel();
+        }
+
+        private void trimBar_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            TrimDragInProgress = false;
+        }
+
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             Properties.Settings.Default.Save();
@@ -637,10 +796,11 @@ namespace QuickCrop
             {
                 muted = true;
                 muteUnmuteButton.Content = MUTE_ICON;
-                unmutedVolume = Math.Clamp(ffmpegPlayer.Volume, 0.1d, 1);
+                unmutedVolume = Math.Clamp(ffmpegPlayer.Volume, MIN_UNMUTED_VOLUME, 1);
                 ffmpegPlayer.Volume = 0;
             }
 
+            videoVolumeSliderValueChangedSkips = 1;
             videoVolumeSlider.Value = ffmpegPlayer.Volume;
         }
 

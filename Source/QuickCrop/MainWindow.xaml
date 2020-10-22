@@ -1,4 +1,4 @@
-﻿<Window x:Name="Window" x:Class="QuickCrop.MainWindow"
+<Window x:Name="Window" x:Class="QuickCrop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,7 +7,7 @@
         xmlns:vlc="clr-namespace:Vlc.DotNet.Wpf;assembly=Vlc.DotNet.Wpf"
         xmlns:ffme="clr-namespace:Unosquare.FFME;assembly=ffme.win"
         mc:Ignorable="d"
-        Title="MainWindow" Height="602" Width="640" Drop="Window_Drop" AllowDrop="True" MouseMove="Window_MouseMove" Closing="Window_Closing" Loaded="Window_Loaded" >
+        Title="MainWindow" Width="640" Drop="Window_Drop" AllowDrop="True" MouseMove="Window_MouseMove" Closing="Window_Closing" Loaded="Window_Loaded" >
 
     <Window.Resources>
         <Style x:Key="SliderRepeatButton" TargetType="RepeatButton">
@@ -109,7 +109,9 @@
     <Grid x:Name="mainGrid" Background="#FF232323" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto">
         <Grid.RowDefinitions>
             <RowDefinition x:Name="topHalf" Height="*"/>
-            <RowDefinition x:Name="bottomHalf" Height="110" MinHeight="110" MaxHeight="110"/>
+            <!-- Video Half -->
+            <RowDefinition x:Name="bottomHalf" Height="170" MinHeight="170" MaxHeight="170"/>
+            <!-- Bottom Half with controls -->
         </Grid.RowDefinitions>
 
         <ffme:MediaElement x:Name="ffmpegPlayer" Background="Black" LoadedBehavior="Play" UnloadedBehavior="Manual" MediaOpened="FfmpegPlayer_MediaOpened" LoopingBehavior="Play" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0"/>
@@ -148,31 +150,6 @@
             <Rectangle x:Name="bottomRightSquare" Fill="#5396B9" Canvas.Left="197" Canvas.Top="197" Width="5" Height="5"/>
         </Canvas>
 
-        <Grid x:Name="slidersGrid" Margin="10,13,10,0" VerticalAlignment="Top" Height="21" Grid.Row="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="14*"/>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="23px" MinWidth="0"/>
-                <ColumnDefinition Width="8*" MinWidth="0"/>
-                <ColumnDefinition Width="23px" MinWidth="0"/>
-                <ColumnDefinition MinWidth="0" Width="2*"/>
-            </Grid.ColumnDefinitions>
-            <Button x:Name="playPauseButton" Content="⏸" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="PlayPauseButton_Click" IsEnabled="False" ToolTip="Pause/Pause Video"/>
-            <Slider x:Name="videoPositionSlider" Style="{StaticResource Horizontal_Slider}" Minimum="0" Maximum="100" ValueChanged="VideoPositionSlider_ValueChanged" PreviewMouseDown="VideoPositionSlider_MouseDown" PreviewMouseUp="VideoPositionSlider_MouseUp" IsEnabled="False" Margin="3,0,6,0" ToolTip="Video Position" Value="0" Foreground="{x:Null}" VerticalAlignment="Stretch" Grid.Column="1"/>
-            <Button x:Name="muteUnmuteButton" Content="🔊" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="MuteButton_Click" IsEnabled="False" ToolTip="Mute/Unmute Video" Grid.Column="2" />
-            <Slider x:Name="videoVolumeSlider" Style="{StaticResource Horizontal_Slider}" Maximum="1" ValueChanged="VideoVolumeSlider_ValueChanged" IsEnabled="False" ToolTip="Video Volume" Grid.Column="3" Margin="5,0,0,0" />
-        </Grid>
-        <Grid x:Name="buttonsGrid" Height="23" Margin="10,71,10,0" VerticalAlignment="Top" Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="5*"/>
-                <ColumnDefinition Width="5*"/>
-            </Grid.ColumnDefinitions>
-            <Button x:Name="openFileButton" Content="Open File" Click="OpenFileButton_Click" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RenderTransformOrigin="0.5,0.5" Margin="0,0,2,0" ToolTip="Open A File"/>
-            <Button x:Name="saveButton" Content="Save As Cropped" HorizontalAlignment="Stretch" Margin="2,0,0,0" VerticalAlignment="Stretch" Grid.Column="1" Click="SaveButton_Click" ToolTip="Save a new cropped copy of the video."/>
-        </Grid>
-        <Label x:Name="infoLabel" Content="Click 'Open File' to crop a video." HorizontalAlignment="Left" Margin="10,38,0,0" VerticalAlignment="Top" Foreground="White" Grid.Row="1"/>
-        <CheckBox x:Name="guidelinesCheckBox" Content="Guidelines" HorizontalAlignment="Right" Margin="0,44,10,0" Grid.Row="1" VerticalAlignment="Top" Foreground="White" Checked="CheckBox_Checked" Unchecked="guidelinesCheckBox_Unchecked" IsChecked="True" FlowDirection="LeftToRight"/>
         <Grid x:Name="ffmpegAlertGrid" Grid.Row="0" Background="#FF171717">
             <TextBlock x:Name="ffmpegInfoTextBlock" Margin="10,10,10,237" TextWrapping="Wrap" Foreground="White" Width="620">
                 This program uses the multimedia framework FFmpeg to handle video playback, cropping and conversion. 
@@ -181,6 +158,82 @@
                 Once you have downloaded it you may place it somewhere you will remember, or if you only want to use it for this program you may place it in this program's directory in a folder called 'ffmpeg'.
             </TextBlock>
             <Button x:Name="locateFFmpegButton" Margin="0,223,0,0" Height="23" Content="Locate FFmpeg Folder" Click="locateFFmpegButton_Click" HorizontalAlignment="Center" VerticalAlignment="Top" Width="142" />
+        </Grid>
+
+        <Grid Grid.Row="1" Margin="15,10,15,10" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="23px"/>
+                <RowDefinition Height="60px"/>
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+
+            <Grid x:Name="slidersGrid" Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="23px" MinWidth="0"/>
+                    <ColumnDefinition Width="8*" MinWidth="0"/>
+                    <ColumnDefinition Width="23px" MinWidth="0"/>
+                    <ColumnDefinition Width="2*" MinWidth="0"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="playPauseButton" Content="⏸" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="PlayPauseButton_Click" IsEnabled="False" ToolTip="Pause/Pause Video"/>
+                <Slider x:Name="videoPositionSlider" Style="{StaticResource Horizontal_Slider}" Minimum="0" Maximum="100" ValueChanged="VideoPositionSlider_ValueChanged" PreviewMouseDown="VideoPositionSlider_MouseDown" PreviewMouseUp="VideoPositionSlider_MouseUp" IsEnabled="False" Margin="10,0,10,0" ToolTip="Video Position" Value="0" Foreground="{x:Null}" VerticalAlignment="Stretch" Grid.Column="1"/>
+                <Button x:Name="muteUnmuteButton" Content="🔇" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Click="MuteButton_Click" IsEnabled="False" ToolTip="Mute/Unmute Video" Grid.Column="2" />
+                <Slider x:Name="videoVolumeSlider" Style="{StaticResource Horizontal_Slider}" Maximum="1" ValueChanged="VideoVolumeSlider_ValueChanged" IsEnabled="False" ToolTip="Video Volume" Grid.Column="3" Margin="10,0,0,0" />
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0,5,0,5">
+                <Grid.RowDefinitions>
+                    <RowDefinition></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="12*"></ColumnDefinition>
+                    <ColumnDefinition Width="49*"/>
+                </Grid.ColumnDefinitions>
+
+                <Rectangle Fill="#FFDEDEDE" Grid.ColumnSpan="2"></Rectangle>
+
+                <Path x:Name="trimBarDarkenPath" Fill="#CC000000" Stretch="Fill" Grid.ColumnSpan="2">
+                    <Path.Data>
+                        <CombinedGeometry GeometryCombineMode="Exclude">
+                            <CombinedGeometry.Geometry1>
+                                <RectangleGeometry x:Name="trimBarDarken" Rect="0,0,610,50" />
+                            </CombinedGeometry.Geometry1>
+                            <CombinedGeometry.Geometry2>
+                                <RectangleGeometry x:Name="trimBarExclude" Rect="1,0,608,50" />
+                            </CombinedGeometry.Geometry2>
+                        </CombinedGeometry>
+                    </Path.Data>
+                </Path>
+
+                <Canvas x:Name="trimBarCanvas" Background="Transparent" MouseDown="trimBar_MouseDown" MouseMove="trimBar_MouseMove" MouseUp="trimBar_MouseUp" ScrollViewer.VerticalScrollBarVisibility="Disabled" Grid.Row="0" Width="Auto" Height="50" Grid.ColumnSpan="2">
+                    <Rectangle x:Name="trimBarRectangle" Stroke="White" Canvas.Left="0" Canvas.Top="0" Width="610" Height="50"/>
+
+                    <Rectangle x:Name="trimBarLeftHandle" Fill="White" Canvas.Left="-2" Canvas.Top="12.5" Width="5" Height="25"/>
+                    <Rectangle x:Name="trimBarRightHandle" Fill="White" Canvas.Left="607" Canvas.Top="12.5" Width="5" Height="25"/>
+                </Canvas>
+            </Grid>
+
+            <Grid Grid.Row="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+
+                <Label x:Name="infoLabel" Content="Click 'Open File' to crop a video." HorizontalAlignment="Left" VerticalAlignment="Top" Foreground="White" Grid.Column="0" Margin="-5,0,0,0"/>
+                <CheckBox x:Name="guidelinesCheckBox" Content="Guidelines" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="White" Checked="CheckBox_Checked" Unchecked="guidelinesCheckBox_Unchecked" IsChecked="True" FlowDirection="LeftToRight" Grid.Column="1"/>
+            </Grid>
+
+            <Grid x:Name="buttonsGrid" VerticalAlignment="Top" Grid.Row="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*"/>
+                    <ColumnDefinition Width="5*"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="openFileButton" Content="Open File" Click="OpenFileButton_Click" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" RenderTransformOrigin="0.5,0.5" Margin="0,0,2,0" ToolTip="Open A File"/>
+                <Button x:Name="saveButton" Content="Save As Cropped" HorizontalAlignment="Stretch" Margin="2,0,0,0" VerticalAlignment="Stretch" Grid.Column="1" Click="SaveButton_Click" ToolTip="Save a new cropped copy of the video."/>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
